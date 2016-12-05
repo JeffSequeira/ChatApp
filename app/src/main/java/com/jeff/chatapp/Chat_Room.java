@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+
 public class Chat_Room extends AppCompatActivity {
 
     private Button btn_send_msg;
@@ -55,10 +56,10 @@ public class Chat_Room extends AppCompatActivity {
                 map2.put("msg",input_msg.getText().toString());
 
                 message_root.updateChildren(map2);
+
+                input_msg.setText("");
             }
         });
-
-
 
         root.addChildEventListener(new ChildEventListener() {
             @Override
@@ -104,3 +105,4 @@ public class Chat_Room extends AppCompatActivity {
 
 
 }
+

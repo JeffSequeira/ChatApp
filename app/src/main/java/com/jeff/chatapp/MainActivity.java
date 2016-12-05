@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SearchView;
+import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,6 +19,8 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -40,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> list_of_rooms = new ArrayList<>();
     private String name;
     private DatabaseReference root = FirebaseDatabase.getInstance().getReference().getRoot();
+    private SearchView searchView;
+    private FirebaseAuth firebaseAuth;
 
     private static int pos;
 
@@ -54,6 +60,11 @@ public class MainActivity extends AppCompatActivity {
 
         arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,list_of_rooms);
 
+        firebaseAuth = FirebaseAuth.getInstance();
+
+        //getting current user
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+
         listView.setAdapter(arrayAdapter);
 
         request_user_name();
@@ -64,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
                 Map<String,Object> map = new HashMap<String, Object>();
                 map.put(room_name.getText().toString(),"");
                 root.updateChildren(map);
+                room_name.setText("");
             }
         });
 
@@ -98,8 +110,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-//popupstart
-        //listView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////popupstart
+
         listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
@@ -111,21 +123,21 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void showPopupMenu(View v){
+   public void showPopupMenu(View v){
         PopupMenu popup = new PopupMenu(this, v);
         MenuInflater inflater = popup.getMenuInflater();
-        inflater.inflate(R.menu.main_menu, popup.getMenu());
+        inflater.inflate(R.menu.popup_menu, popup.getMenu());
         popup.show();
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-               /* final AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-                final int position = info.position;*/
+               final AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+                final int position = info.position;
                 switch(item.getItemId()){
-                    case R.id.edit:
+                    case R.id.edit_id:
                         Toast.makeText(getBaseContext(), "calling "+"LLLL", Toast.LENGTH_SHORT).show();
                         return true;
-                    case R.id.delete:
+                    case R.id.delete_id:
                         Toast.makeText(getBaseContext(), "Message "+"KKKK", Toast.LENGTH_SHORT).show();
                         AlertDialog.Builder alert = new AlertDialog.Builder(
                                 MainActivity.this);
@@ -159,22 +171,7 @@ public class MainActivity extends AppCompatActivity {
         }
     });
     }
-   /* public boolean onMenuItemClick(MenuItem item){
-        switch(item.getItemId()){
-            case R.id.edit:
-                Toast.makeText(getBaseContext(), "calling "+"LLLL", Toast.LENGTH_SHORT).show();
-                return true;
-            case R.id.delete:
-                Toast.makeText(getBaseContext(), "Message "+"KKKK", Toast.LENGTH_SHORT).show();
-                return true;
-
-            default: return false;
-        }*/
-
-        //popupend
-
-
-
+       ////////////////////////////////////////////////////////// //popupend
 
     private void request_user_name() {
         AlertDialog.Builder builder =  new AlertDialog.Builder(this);
@@ -200,4 +197,35 @@ public class MainActivity extends AppCompatActivity {
 
         builder.show();
     }
+
+//Creating Options Menu Start///////////////////////
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+        switch(item.getItemId()){
+            case R.id.logout_id:
+                //logging out the user
+                firebaseAuth.signOut();
+                //closing activity
+                finish();
+                //starting login activity
+                startActivity(new Intent(this, LoginActivity.class));
+                break;
+
+        }
+        return true;
+    }
+
+    //Creating Options Menu End///////////////////////
+
+
+
 }
