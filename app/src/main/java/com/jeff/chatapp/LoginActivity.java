@@ -1,7 +1,11 @@
 package com.jeff.chatapp;
 
 import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -9,6 +13,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -18,100 +23,90 @@ import com.google.firebase.auth.FirebaseAuth;
 
 public class LoginActivity extends AppCompatActivity {
 
-    //defining views
-    private Button buttonSignIn, buttonSignUp;
-    private EditText editTextEmail;
-    private EditText editTextPassword;
-
-    //firebase auth object
+    private TextView tvsignup;
+    private EditText etloginmail, etloginpass;
+    private Button btnlogin;
+    private ProgressDialog progressDialog;
     private FirebaseAuth firebaseAuth;
 
-    //progress dialog
-    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.login_layout);
+        setContentView(R.layout.activity_login);
 
-        //getting firebase auth object
-        firebaseAuth = FirebaseAuth.getInstance();
+        tvsignup=(TextView)findViewById(R.id.tvsignup);
+        etloginmail=(EditText)findViewById(R.id.etloginmail);
+        etloginpass=(EditText)findViewById(R.id.etloginpass);
+        btnlogin=(Button)findViewById(R.id.btnSignIn);
 
-        //if the objects getcurrentuser method is not null
-        //means user is already logged in
-        if (firebaseAuth.getCurrentUser() != null) {
-            //close this activity
-            finish();
-            //opening profile activity
-            startActivity(new Intent(getApplicationContext(), MainActivity.class));
-        }
-
-        //initializing views
-        editTextEmail = (EditText) findViewById(R.id.editTextEmail);
-        editTextPassword = (EditText) findViewById(R.id.editTextPassword);
-        buttonSignIn = (Button) findViewById(R.id.buttonSignin);
-        buttonSignUp = (Button) findViewById(R.id.buttonRegister);
-
-        progressDialog = new ProgressDialog(this);
+        progressDialog= new ProgressDialog(this);
+        firebaseAuth= FirebaseAuth.getInstance();
 
 
-       buttonSignUp.setOnClickListener(new View.OnClickListener() {
+        tvsignup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), UserRegistrationActivity.class);
-                startActivity(intent);
-                Toast.makeText(LoginActivity.this,"Successfully registered",Toast.LENGTH_LONG).show();
+                startActivity(new Intent(getBaseContext(),RegisterActivity.class));
             }
         });
 
-        buttonSignIn.setOnClickListener(new View.OnClickListener() {
+
+        btnlogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                if(!checkInternet()){
+                    final android.app.AlertDialog alertDialog = new android.app.AlertDialog.Builder(LoginActivity.this).create();
+                    alertDialog.setTitle("Info");
+                    alertDialog.setMessage("Internet not available, Check your internet connectivity and try again");
+                    alertDialog.setIcon(android.R.drawable.ic_dialog_alert);
+                    alertDialog.setButton("OK", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            alertDialog.dismiss();
+                        }
+                    });
+                    alertDialog.show();
+                }
                 userLogin();
             }
         });
     }
 
+    private void userLogin() {
 
-    //method for user login
-    private void userLogin(){
-        String email = editTextEmail.getText().toString().trim();
-        String password  = editTextPassword.getText().toString().trim();
+        String loginmail=etloginmail.getText().toString().trim();
+        String loginpass=etloginpass.getText().toString().trim();
 
+        if(TextUtils.isEmpty(loginmail)){
+            Toast.makeText(this,"Please Enter Email",Toast.LENGTH_SHORT).show();
+            return;}
+        if(TextUtils.isEmpty(loginpass)){
+            Toast.makeText(this,"Please Enter Password",Toast.LENGTH_SHORT).show();
+            return;}
 
-        //checking if email and passwords are empty
-        if(TextUtils.isEmpty(email)){
-            Toast.makeText(this,"Please enter email",Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        if(TextUtils.isEmpty(password)){
-            Toast.makeText(this,"Please enter password",Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        //if the email and password are not empty
-        //displaying a progress dialog
-
-        progressDialog.setMessage("Logging in ..Please Wait...");
+        progressDialog.setMessage("Logging In...");
         progressDialog.show();
 
-        //logging in the user
-        firebaseAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        progressDialog.dismiss();
-                        //if the task is successfull
-                        if(task.isSuccessful()){
-                            //start the profile activity
-                            finish();
-                            startActivity(new Intent(getApplicationContext(), MainActivity.class));
-                            Toast.makeText(LoginActivity.this,"Successfully registered",Toast.LENGTH_LONG).show();
-                        }
-                    }
-                });
-
-    }
+        firebaseAuth.signInWithEmailAndPassword(loginmail,loginpass).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+            @Override
+            public void onComplete(@NonNull Task<AuthResult> task) {
+                if(task.isSuccessful()){
+                    progressDialog.dismiss();
+                    finish();
+                    Toast.makeText(getBaseContext(),"Logged In",Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(getBaseContext(),MainActivity.class));}
+                else {
+                    progressDialog.dismiss();
+                    Toast.makeText(getBaseContext(), "Login failed. Please enter correct credentials", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
+    private boolean checkInternet() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+}
